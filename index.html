@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frequentar - Sistema de Controle de Frequência</title>
+    <!-- FontAwesome para ícones -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-blue: #1a73e8; /* Azul Original V1 */
+            --dark-blue: #0d47a1;
+            --bg-light: #f4f6f8;
+            --text-dark: #2c3e50;
+            --text-light: #666666;
+            --white: #ffffff;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f1c40f;
+            --sidebar-width: 250px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text-dark);
+        }
+
+        /* --- UTILITÁRIOS --- */
+        .hidden { display: none !important; }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary { background-color: var(--primary-blue); color: white; }
+        .btn-primary:hover { background-color: var(--dark-blue); }
+        
+        .btn-danger { background-color: #fee2e2; color: var(--danger); }
+        .btn-danger:hover { background-color: #fecaca; }
+        
+        .btn-edit { background-color: #e0f2fe; color: var(--primary-blue); }
+        .btn-edit:hover { background-color: #bae6fd; }
+
+        .btn-outline { border: 1px solid var(--primary-blue); background: white; color: var(--primary-blue); }
+        .btn-outline:hover { background-color: #e3f2fd; }
+
+        /* --- TELA DE LOGIN --- */
+        #login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--dark-blue), var(--primary-blue));
+        }
+
+        .login-card {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .login-logo {
+            font-size: 3rem;
+            color: var(--primary-blue);
+            margin-bottom: 10px;
+        }
+
+        .login-form input, .login-form select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        /* --- DASHBOARD LAYOUT --- */
+        .dashboard-container { display: flex; height: 100vh; }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--dark-blue);
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item {
+            padding: 15px;
+            color: #666;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        .nav-item:hover { background-color: #f5f5f5; color: var(--text-dark); }
+        .nav-item.active { background-color: #e3f2fd; color: var(--primary-blue); font-weight: bold; }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        /* --- COMPONENTES DO DASHBOARD --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .stat-icon {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        /* Tabela Estilizada */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .table-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px; border-bottom: 1px solid #eee; color: #666; font-size: 0.9rem; }
+        td { padding: 15px; border-bottom: 1px solid #f9f9f9; vertical-align: middle; }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .status-active { background: #e8f5e9; color: var(--success); }
+        .status-inactive { background: #ffebee; color: var(--danger); }
+
+        /* Card de Turma (Professor) */
+        .class-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary-blue);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 50;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s;
+        }
+        .modal.visible { opacity: 1; pointer-events: auto; }
+        
+        .modal-content {
+            background: white; width: 90%; max-width: 450px;
+            border-radius: 10px; padding: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: left;
+        }
+
+        /* Wi-Fi Sim */
+        .wifi-scanner { text-align: center; }
+        .spinner {
+            border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-blue);
+            border-radius: 50%; width: 40px; height: 40px;
+            animation: spin 1s linear infinite; margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <!-- TELA LOGIN (V1 STYLE) -->
+    <section id="login-screen">
+        <div class="login-card">
+            <div class="login-logo"><i class="fas fa-check-circle"></i></div>
+            <h2>Frequentar</h2>
+            <p style="color: #666; margin-bottom: 20px;">Sistema de Controle de Frequência</p>
+            
+            <div class="login-form">
+                <input type="text" id="email" placeholder="Email ou Matrícula" value="admin@admin.com">
+                <input type="password" id="password" placeholder="Senha" value="123456">
+                
+                <select id="userType">
+                    <option value="admin">Administrador</option>
+                    <option value="professor">Professor</option>
+                    <option value="aluno">Aluno</option>
+                </select>
+                
+                <button class="btn btn-primary" style="width: 100%; margin-top: 10px; justify-content: center;" onclick="login()">Entrar</button>
+            </div>
+            <p style="margin-top: 15px; font-size: 0.9rem;"><a href="#" style="color: var(--primary-blue);">Esqueci minha senha</a></p>
+        </div>
+    </section>
+
+    <!-- DASHBOARD PRINCIPAL -->
+    <section id="dashboard" class="dashboard-container hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fas fa-check-circle" style="color: var(--primary-blue)"></i> Frequentar
+            </div>
+            <nav id="sidebar-menu">
+                <!-- Itens do menu gerados via JS -->
+            </nav>
+            <div style="margin-top: auto;">
+                <div class="nav-item" onclick="logout()" style="color: var(--danger);">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <div>
+                    <h2 id="page-title">Visão Geral</h2>
+                    <p id="page-subtitle" style="color: #666;">Bem-vindo de volta</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="text-align: right;">
+                        <strong id="user-name" style="display: block;">Usuário</strong>
+                        <span id="user-role" style="font-size: 0.8rem; color: #666;">Cargo</span>
+                    </div>
+                    <div style="width: 40px; height: 40px; background: var(--primary-blue); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                        <span id="user-initial">U</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Área de Conteúdo Dinâmico -->
+            <div id="content-area"></div>
+        </main>
+    </section>
+
+    <!-- MODAL DE CADASTRO (ADMIN) -->
+    <div id="modal-form" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="modal-title">Novo Usuário</h3>
+                <i class="fas fa-times" style="cursor: pointer;" onclick="closeModal('modal-form')"></i>
+            </div>
+            
+            <form onsubmit="handleSaveUser(event)">
+                <input type="hidden" id="edit-id">
+                
+                <input type="text" id="input-name" class="login-form input" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;" required placeholder="Nome Completo">
+                <input type="text" id="input-mat" class="login-form input" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;" required placeholder="Matrícula">
+                <input type="text" id="input-course" class="login-form input" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;" required placeholder="Curso / Cargo">
+
+                <!-- TIPO DE USUÁRIO -->
+                <select id="input-type" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;" required>
+                    <option value="" disabled selected>Selecione o Tipo</option>
+                    <option value="Aluno">Aluno</option>
+                    <option value="Professor">Professor</option>
+                </select>
+
+                <select id="input-status" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;">
+                    <option value="Ativo">Ativo</option>
+                    <option value="Inativo">Inativo</option>
+                </select>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('modal-form')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE WI-FI (ALUNO) -->
+    <div id="modal-wifi" class="modal">
+        <div class="modal-content wifi-scanner">
+            <h3 style="margin-bottom: 10px;">Validando Localização</h3>
+            <p style="color: #666; font-size: 0.9rem;" id="wifi-status">Buscando rede da sala...</p>
+            <div class="spinner"></div>
+            <div id="wifi-steps" style="text-align: left; background: #f9fafb; padding: 15px; border-radius: 8px; font-size: 0.9rem; margin-top: 15px;">
+                <div id="step1" style="margin-bottom: 5px; color: #999;"><i class="far fa-circle"></i> Verificando GPS</div>
+                <div id="step2" style="margin-bottom: 5px; color: #999;"><i class="far fa-circle"></i> Identificando BSSID (MAC)</div>
+                <div id="step3" style="color: #999;"><i class="far fa-circle"></i> Confirmando Presença</div>
+            </div>
+            <button id="btn-close-wifi" class="btn btn-outline hidden" onclick="closeModal('modal-wifi')" style="margin-top: 20px; width: 100%; justify-content: center;">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        // --- BANCO DE DADOS EM MEMÓRIA ---
+        let globalUsers = [
+            { id: 1, name: "João Silva", mat: "2023001", course: "Engenharia", type: "Aluno", status: "Ativo" },
+            { id: 2, name: "Maria Santos", mat: "2023002", course: "Design", type: "Aluno", status: "Ativo" },
+            { id: 3, name: "Carlos Almeida", mat: "P-101", course: "Matemática", type: "Professor", status: "Ativo" },
+            { id: 4, name: "Ana Costa", mat: "2023003", course: "Engenharia", type: "Aluno", status: "Inativo" }
+        ];
+
+        // Estado da Sessão
+        let currentUser = null;
+
+        // --- SISTEMA DE LOGIN ---
+        function login() {
+            const type = document.getElementById('userType').value;
+            
+            if(type === 'admin') currentUser = { name: "Admin Geral", role: "Administrador", initial: "A" };
+            else if(type === 'professor') currentUser = { name: "Carlos Almeida", role: "Professor", initial: "C" };
+            else currentUser = { name: "João Silva", role: "Aluno", initial: "J" };
+            
+            currentUser.type = type;
+
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            
+            setupUI();
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+
+        // --- UI SETUP ---
+        function setupUI() {
+            document.getElementById('user-name').innerText = currentUser.name;
+            document.getElementById('user-role').innerText = currentUser.role;
+            document.getElementById('user-initial').innerText = currentUser.initial;
+
+            const menu = document.getElementById('sidebar-menu');
+            menu.innerHTML = '';
+
+            let items = [];
+            if(currentUser.type === 'admin') {
+                items = [
+                    { id: 'dashboard', icon: 'fa-chart-pie', label: 'Visão Geral', action: renderAdminDashboard },
+                    { id: 'cadastros', icon: 'fa-users', label: 'Cadastros', action: renderAdminCadastros },
+                    { id: 'relatorios', icon: 'fa-file-alt', label: 'Relatórios', action: () => alert("Módulo de relatórios em desenvolvimento") }
+                ];
+            } else if(currentUser.type === 'professor') {
+                items = [
+                    { id: 'turmas', icon: 'fa-chalkboard-teacher', label: 'Minhas Turmas', action: renderProfessorTurmas },
+                    { id: 'historico', icon: 'fa-history', label: 'Histórico', action: () => alert("Histórico em breve") }
+                ];
+            } else {
+                items = [
+                    { id: 'painel', icon: 'fa-user-graduate', label: 'Meu Painel', action: renderStudentPanel },
+                    { id: 'notas', icon: 'fa-book', label: 'Boletim', action: () => alert("Boletim em breve") }
+                ];
+            }
+
+            items.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = `nav-item ${index === 0 ? 'active' : ''}`;
+                div.innerHTML = `<i class="fas ${item.icon}"></i> ${item.label}`;
+                div.onclick = () => {
+                    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                    div.classList.add('active');
+                    item.action();
+                };
+                menu.appendChild(div);
+            });
+
+            // Carrega a primeira tela
+            items[0].action();
+        }
+
+        // --- TELAS DO ADMINISTRADOR ---
+        function renderAdminDashboard() {
+            document.getElementById('page-title').innerText = "Dashboard Administrativo";
+            document.getElementById('page-subtitle').innerText = "Visão geral do sistema";
+            
+            const activeStudents = globalUsers.filter(u => u.type === 'Aluno' && u.status === 'Ativo').length;
+            
+            document.getElementById('content-area').innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #e0f2fe; color: var(--primary-blue);"><i class="fas fa-user-graduate"></i></div>
+                        <div><h3 style="font-size: 1.5rem; margin-bottom: 2px;">${activeStudents}</h3><span style="color: #666;">Alunos Ativos</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #dcfce7; color: var(--success);"><i class="fas fa-check-circle"></i></div>
+                        <div><h3 style="font-size: 1.5rem; margin-bottom: 2px;">92%</h3><span style="color: #666;">Presença Média</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #fee2e2; color: var(--danger);"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div><h3 style="font-size: 1.5rem; margin-bottom: 2px;">5</h3><span style="color: #666;">Alertas Críticos</span></div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <h3>Atividades Recentes</h3>
+                    <div style="padding: 20px 0; color: #666;">
+                        <p><i class="fas fa-info-circle"></i> O sistema está operando normalmente.</p>
+                        <p style="margin-top: 10px;">• Prof. Carlos registrou presença na turma de Matemática.</p>
+                        <p>• Novo aluno cadastrado: Ana Costa.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAdminCadastros() {
+            document.getElementById('page-title').innerText = "Gerenciamento de Usuários";
+            document.getElementById('page-subtitle').innerText = "Cadastre, edite ou remova usuários do sistema";
+            
+            const tableRows = globalUsers.map(u => `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; background: #e0e7ff; color: var(--primary-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem;">
+                                ${u.name.charAt(0)}
+                            </div>
+                            <div>
+                                <div style="font-weight: 600;">${u.name}</div>
+                                <div style="font-size: 0.8rem; color: #999;">${u.type}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${u.mat}</td>
+                    <td>${u.course}</td>
+                    <td>
+                        <span class="status-badge ${u.status === 'Ativo' ? 'status-active' : 'status-inactive'}">${u.status}</span>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-edit" style="padding: 6px 12px;" onclick="openEditModal(${u.id})">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button class="btn btn-danger" style="padding: 6px 12px;" onclick="deleteUser(${u.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.getElementById('content-area').innerHTML = `
+                <div class="table-container">
+                    <div class="table-header-row">
+                        <h3>Usuários Cadastrados (${globalUsers.length})</h3>
+                        <button class="btn btn-primary" onclick="openNewUserModal()">
+                            <i class="fas fa-plus"></i> Novo Cadastro
+                        </button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>NOME / PERFIL</th>
+                                    <th>MATRÍCULA</th>
+                                    <th>CURSO/CARGO</th>
+                                    <th>STATUS</th>
+                                    <th>AÇÕES</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- LÓGICA DE CRUD (ADMIN) ---
+        function openNewUserModal() {
+            document.getElementById('modal-title').innerText = "Novo Usuário";
+            document.getElementById('edit-id').value = "";
+            document.querySelector('form').reset();
+            // Reset do select type
+            document.getElementById('input-type').value = "";
+            document.getElementById('modal-form').classList.add('visible');
+        }
+
+        function openEditModal(id) {
+            const user = globalUsers.find(u => u.id === id);
+            if (!user) return;
+            
+            document.getElementById('modal-title').innerText = "Editar Usuário";
+            document.getElementById('edit-id').value = user.id;
+            document.getElementById('input-name').value = user.name;
+            document.getElementById('input-mat').value = user.mat;
+            document.getElementById('input-course').value = user.course;
+            document.getElementById('input-status').value = user.status;
+            document.getElementById('input-type').value = user.type; // Preenche o tipo
+            
+            document.getElementById('modal-form').classList.add('visible');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('visible');
+        }
+
+        function handleSaveUser(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const name = document.getElementById('input-name').value;
+            const mat = document.getElementById('input-mat').value;
+            const course = document.getElementById('input-course').value;
+            const status = document.getElementById('input-status').value;
+            const type = document.getElementById('input-type').value;
+
+            if (id) {
+                // Editar existente
+                const index = globalUsers.findIndex(u => u.id == id);
+                if (index !== -1) {
+                    globalUsers[index] = { ...globalUsers[index], name, mat, course, type, status };
+                }
+            } else {
+                // Criar novo
+                const newId = globalUsers.length > 0 ? Math.max(...globalUsers.map(u => u.id)) + 1 : 1;
+                globalUsers.push({ id: newId, name, mat, course, type, status });
+            }
+
+            closeModal('modal-form');
+            renderAdminCadastros(); 
+        }
+
+        function deleteUser(id) {
+            if (confirm("Tem certeza que deseja excluir este usuário?")) {
+                globalUsers = globalUsers.filter(u => u.id !== id);
+                renderAdminCadastros();
+            }
+        }
+
+
+        // --- TELAS DO PROFESSOR ---
+        function renderProfessorTurmas() {
+            document.getElementById('page-title').innerText = "Minhas Turmas";
+            document.getElementById('page-subtitle').innerText = "Selecione uma turma para realizar a chamada";
+            
+            const classes = [
+                { id: "ENG-01", name: "Cálculo I", time: "08:00 - 10:00", students: 45 },
+                { id: "ENG-02", name: "Física Teórica", time: "10:00 - 12:00", students: 38 }
+            ];
+
+            const html = classes.map(c => `
+                <div class="class-card">
+                    <div>
+                        <h3 style="margin-bottom: 5px; font-size: 1.2rem;">${c.name} <span style="font-weight: 400; color: #666; font-size: 0.9rem;">(${c.id})</span></h3>
+                        <p style="color: #666;"><i class="far fa-clock"></i> ${c.time} • ${c.students} Alunos inscritos</p>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="renderAttendanceList('${c.name}')">
+                            Acessar Turma <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('content-area').innerHTML = `
+                <div style="margin-bottom: 20px; background: #fff3e0; border: 1px solid #f1c40f; color: #d35400; padding: 15px; border-radius: 8px;">
+                    <i class="fas fa-exclamation-circle"></i> Você tem uma aula pendente de registro hoje.
+                </div>
+                ${html}
+            `;
+        }
+
+        function renderAttendanceList(className) {
+            // Filtra apenas alunos para mostrar na chamada
+            const students = globalUsers.filter(u => u.type === 'Aluno' && u.status === 'Ativo');
+
+            const rows = students.map(s => `
+                <tr>
+                    <td>
+                        <div style="font-weight: 600;">${s.name}</div>
+                        <div style="font-size: 0.8rem; color: #666;">${s.mat}</div>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn" style="background: #e8f5e9; color: #166534;" onclick="this.style.opacity='0.5'">Presente</button>
+                            <button class="btn" style="background: #ffebee; color: #991b1b;" onclick="this.style.opacity='0.5'">Falta</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.getElementById('content-area').innerHTML = `
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <button class="btn btn-outline" onclick="renderProfessorTurmas()"><i class="fas fa-arrow-left"></i> Voltar</button>
+                    <h2>${className} - Lista de Chamada</h2>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ALUNO</th>
+                                <th>REGISTRO DE HOJE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                    <div style="padding: 20px; text-align: right; background: #f9fafb;">
+                        <button class="btn btn-primary" onclick="alert('Chamada salva com sucesso!')">
+                            <i class="fas fa-save"></i> Finalizar Chamada
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- TELAS DO ALUNO ---
+        function renderStudentPanel() {
+            document.getElementById('page-title').innerText = "Meu Painel";
+            document.getElementById('page-subtitle').innerText = "Acompanhe sua frequência e aulas";
+
+            document.getElementById('content-area').innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #e0f2fe; color: var(--primary-blue);"><i class="fas fa-percentage"></i></div>
+                        <div><h3>88%</h3><span style="color: #666;">Frequência Geral</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #fee2e2; color: var(--danger);"><i class="fas fa-times"></i></div>
+                        <div><h3>4</h3><span style="color: #666;">Faltas</span></div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 12px; padding: 40px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h2 style="color: var(--primary-blue); margin-bottom: 10px;">Check-in de Presença</h2>
+                    <p style="color: #666; margin-bottom: 30px;">Aula Atual: <strong>Cálculo I</strong> - Sala 304</p>
+                    
+                    <button class="btn btn-primary" style="padding: 20px 40px; font-size: 1.1rem; border-radius: 50px;" onclick="startWifiCheck()">
+                        <i class="fas fa-map-marker-alt"></i> REGISTRAR PRESENÇA AGORA
+                    </button>
+                    
+                    <p style="margin-top: 20px; font-size: 0.85rem; color: #999;">
+                        <i class="fas fa-wifi"></i> Requer conexão com a rede Wi-Fi da sala (Validação BSSID)
+                    </p>
+                </div>
+            `;
+        }
+
+        // --- SIMULAÇÃO WI-FI ---
+        function startWifiCheck() {
+            const modal = document.getElementById('modal-wifi');
+            const status = document.getElementById('wifi-status');
+            const btnClose = document.getElementById('btn-close-wifi');
+            
+            // Reset UI
+            document.getElementById('step1').style.color = '#999';
+            document.getElementById('step2').style.color = '#999';
+            document.getElementById('step3').style.color = '#999';
+            btnClose.classList.add('hidden');
+            status.innerText = "Iniciando verificação...";
+            
+            modal.classList.add('visible');
+
+            // Sequência de Simulação
+            setTimeout(() => {
+                document.getElementById('step1').style.color = 'var(--success)';
+                status.innerText = "GPS OK. Escaneando redes...";
+                
+                setTimeout(() => {
+                    document.getElementById('step2').style.color = 'var(--success)';
+                    status.innerText = "Rede 'SENAC_SALA_304' encontrada. Validando MAC...";
+                    
+                    setTimeout(() => {
+                        document.getElementById('step3').style.color = 'var(--success)';
+                        status.innerHTML = "<strong style='color:var(--success)'>Sucesso! Presença Registrada.</strong>";
+                        btnClose.classList.remove('hidden');
+                    }, 1500);
+                }, 1500);
+            }, 1000);
+        }
+
+    </script>
+</body>
+</html>
